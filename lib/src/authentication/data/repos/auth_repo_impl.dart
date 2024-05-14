@@ -1,23 +1,72 @@
 import 'package:dartz/dartz.dart';
-import '../models/models.dart';
+import 'package:education/core/enums/update_user.dart';
+import 'package:education/core/errors/exceptions.dart';
+import 'package:education/core/errors/failure.dart';
+import 'package:education/core/utils/typedef.dart';
+import 'package:education/src/authentication/data/datasource/auth_remote_data_source.dart';
+import 'package:education/src/authentication/domain/entities/user_entity.dart';
+import 'package:education/src/authentication/domain/repositories/authentication_repository.dart';
 
-class AuthenticationRemoteDataSource {
-  AuthenticationRemoteDataSource(/*this._apiClient*/);
-  // final ApiClient _apiClient;
+class AuthRepoImpl implements AuthRepo {
+  const AuthRepoImpl(this._remoteDataSource);
 
-  Future<Either<String, AuthenticationModel>> get(String id) async {
+  final AuthRemoteDataSource _remoteDataSource;
+
+  @override
+  ResultFuture<void> forgotPassword(String email) async {
     try {
-      // final result = await _apiClient.get(id);
-      // if (result.response.statusCode == 200) {
-      //   final resultLocal = await _localDataSource.get(id);
-      //   final data = resultRemote.data;
-      //   return Right(data);
-      // }
-      // return Left('${result.response.statusCode}:${result.response.statusMessage}');
-      return Right(AuthenticationModel());
-    } catch (e) {
-      return Left(e.toString());
+      await _remoteDataSource.forgotPassword(email);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    }
+  }
+
+  @override
+  ResultFuture<LocalUser> signIn({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final result = await _remoteDataSource.signIn(
+        email: email,
+        password: password,
+      );
+
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    }
+  }
+
+  @override
+  ResultFuture<void> signUp({
+    required String email,
+    required String fullName,
+    required String password,
+  }) async {
+    try {
+      await _remoteDataSource.signUp(
+        email: email,
+        fullName: fullName,
+        password: password,
+      );
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    }
+  }
+
+  @override
+  ResultFuture<void> updateUser({
+    required UpdateUserAction action,
+    required dynamic userData,
+  }) async {
+    try {
+      await _remoteDataSource.updateUser(action: action, userData: userData);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
     }
   }
 }
-  
